@@ -22,9 +22,9 @@ type Program struct {
 }
 
 type AppDecl struct {
-	Name   string      `json:"name"`
-	Fields []AppField  `json:"fields"`
-	Span   Span        `json:"span"`
+	Name   string     `json:"name"`
+	Fields []AppField `json:"fields"`
+	Span   Span       `json:"span"`
 }
 
 type ServiceDecl struct {
@@ -41,22 +41,22 @@ type ResourceDecl struct {
 }
 
 type AppField struct {
-	Kind   string   `json:"kind"`
-	String string   `json:"string,omitempty"`
-	Ident  string   `json:"ident,omitempty"`
-	Int    int      `json:"int,omitempty"`
-	Money  int      `json:"money,omitempty"`
-	Span   Span     `json:"span"`
+	Kind   string `json:"kind"`
+	String string `json:"string,omitempty"`
+	Ident  string `json:"ident,omitempty"`
+	Int    int    `json:"int,omitempty"`
+	Money  int    `json:"money,omitempty"`
+	Span   Span   `json:"span"`
 }
 
 type ServiceField struct {
-	Kind    string   `json:"kind"`
-	Ident   string   `json:"ident,omitempty"`
-	String  string   `json:"string,omitempty"`
-	Int     int      `json:"int,omitempty"`
-	Idents  []string `json:"idents,omitempty"`
-	Protocol string  `json:"protocol,omitempty"`
-	Span    Span     `json:"span"`
+	Kind     string   `json:"kind"`
+	Ident    string   `json:"ident,omitempty"`
+	String   string   `json:"string,omitempty"`
+	Int      int      `json:"int,omitempty"`
+	Idents   []string `json:"idents,omitempty"`
+	Protocol string   `json:"protocol,omitempty"`
+	Span     Span     `json:"span"`
 }
 
 type ResourceField struct {

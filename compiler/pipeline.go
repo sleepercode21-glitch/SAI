@@ -10,9 +10,10 @@ import (
 )
 
 type Result struct {
-	AST *ast.Program    `json:"ast"`
-	IR  *ir.ProgramIR   `json:"ir"`
-	Plan *planner.Plan  `json:"plan,omitempty"`
+	AST     *ast.Program  `json:"ast"`
+	IR      *ir.ProgramIR `json:"ir"`
+	Plan    *planner.Plan `json:"plan,omitempty"`
+	Lowered *LoweredPlans `json:"lowered,omitempty"`
 }
 
 func CompileFile(path string) (*Result, error) {
@@ -48,5 +49,11 @@ func PlanFile(path string) (*Result, error) {
 		return nil, err
 	}
 	result.Plan = plan
+
+	lowered, err := Lower(result.IR, result.Plan)
+	if err != nil {
+		return nil, err
+	}
+	result.Lowered = lowered
 	return result, nil
 }

@@ -7,8 +7,8 @@ import (
 )
 
 type Parser struct {
-	lexer   *lexer
-	current token
+	lexer    *lexer
+	current  token
 	previous token
 }
 
