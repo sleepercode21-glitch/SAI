@@ -69,7 +69,7 @@ func Lower(program *ir.ProgramIR, deployment *planner.Plan) (*Plan, error) {
 		}
 		plan.Database = &DatabasePlan{
 			Name:      resource.Name,
-			Engine:    resource.Kind,
+			Engine:    inferDatabaseEngine(resource),
 			Class:     resource.Size,
 			Managed:   resource.Type == "managed",
 			Connected: connectsTo(program.Service.Connects, resource.Name),
@@ -87,4 +87,11 @@ func connectsTo(resources []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func inferDatabaseEngine(resource ir.ResourceIR) string {
+	if resource.Kind != "database" {
+		return resource.Kind
+	}
+	return "postgres"
 }

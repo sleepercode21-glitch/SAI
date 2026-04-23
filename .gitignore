@@ -1,0 +1,5 @@
+.gocache/
+dist/
+build/
+*.tfplan
+*.log

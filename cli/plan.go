@@ -26,6 +26,7 @@ func (c *planCommand) Run(args []string) error {
 	fs := flag.NewFlagSet(c.Name(), flag.ContinueOnError)
 	path := fs.String("path", "sai.sai", "Path to the .sai manifest")
 	jsonOutput := fs.Bool("json", false, "Emit JSON output")
+	terraformOutput := fs.Bool("terraform-json", false, "Emit only generated Terraform JSON")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -41,6 +42,10 @@ func (c *planCommand) Run(args []string) error {
 
 	if *jsonOutput {
 		return printJSON(result)
+	}
+	if *terraformOutput {
+		fmt.Println(result.TerraformJSON)
+		return nil
 	}
 
 	fmt.Printf("app=%s profile=%s infra=%s min=%d max=%d estimated=$%d\n",

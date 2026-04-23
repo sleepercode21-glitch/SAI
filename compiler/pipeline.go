@@ -4,16 +4,18 @@ import (
 	"os"
 
 	"github.com/sleepercode/sai/ast"
+	infraplan "github.com/sleepercode/sai/compiler/infra"
 	"github.com/sleepercode/sai/ir"
 	"github.com/sleepercode/sai/parser"
 	"github.com/sleepercode/sai/planner"
 )
 
 type Result struct {
-	AST     *ast.Program  `json:"ast"`
-	IR      *ir.ProgramIR `json:"ir"`
-	Plan    *planner.Plan `json:"plan,omitempty"`
-	Lowered *LoweredPlans `json:"lowered,omitempty"`
+	AST           *ast.Program  `json:"ast"`
+	IR            *ir.ProgramIR `json:"ir"`
+	Plan          *planner.Plan `json:"plan,omitempty"`
+	Lowered       *LoweredPlans `json:"lowered,omitempty"`
+	TerraformJSON string        `json:"terraform_json,omitempty"`
 }
 
 func CompileFile(path string) (*Result, error) {
@@ -55,5 +57,11 @@ func PlanFile(path string) (*Result, error) {
 		return nil, err
 	}
 	result.Lowered = lowered
+
+	terraformJSON, err := infraplan.GenerateTerraformJSON(result.Lowered.Infra)
+	if err != nil {
+		return nil, err
+	}
+	result.TerraformJSON = string(terraformJSON)
 	return result, nil
 }
