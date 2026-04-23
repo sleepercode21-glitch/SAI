@@ -1,0 +1,52 @@
+package compiler
+
+import (
+	"os"
+
+	"github.com/sleepercode/sai/ast"
+	"github.com/sleepercode/sai/ir"
+	"github.com/sleepercode/sai/parser"
+	"github.com/sleepercode/sai/planner"
+)
+
+type Result struct {
+	AST *ast.Program    `json:"ast"`
+	IR  *ir.ProgramIR   `json:"ir"`
+	Plan *planner.Plan  `json:"plan,omitempty"`
+}
+
+func CompileFile(path string) (*Result, error) {
+	source, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	programAST, err := parser.Parse(string(source))
+	if err != nil {
+		return nil, err
+	}
+
+	programIR, err := ir.Build(programAST)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Result{
+		AST: programAST,
+		IR:  programIR,
+	}, nil
+}
+
+func PlanFile(path string) (*Result, error) {
+	result, err := CompileFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	plan, err := planner.Build(result.IR)
+	if err != nil {
+		return nil, err
+	}
+	result.Plan = plan
+	return result, nil
+}

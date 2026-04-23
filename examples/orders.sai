@@ -1,0 +1,18 @@
+app "orders" {
+  users 5000
+  budget 75usd
+  env prod
+}
+
+service api {
+  runtime node
+  path "server"
+  port 3000
+  public http
+  connects postgres
+}
+
+database postgres {
+  type managed
+  size small
+}
