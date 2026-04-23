@@ -11,11 +11,12 @@ import (
 )
 
 type Result struct {
-	AST           *ast.Program  `json:"ast"`
-	IR            *ir.ProgramIR `json:"ir"`
-	Plan          *planner.Plan `json:"plan,omitempty"`
-	Lowered       *LoweredPlans `json:"lowered,omitempty"`
-	TerraformJSON string        `json:"terraform_json,omitempty"`
+	AST           *ast.Program        `json:"ast"`
+	IR            *ir.ProgramIR       `json:"ir"`
+	Plan          *planner.Plan       `json:"plan,omitempty"`
+	Lowered       *LoweredPlans       `json:"lowered,omitempty"`
+	InfraArtifact *infraplan.Artifact `json:"infra_artifact,omitempty"`
+	TerraformJSON string              `json:"terraform_json,omitempty"`
 }
 
 func CompileFile(path string) (*Result, error) {
@@ -58,10 +59,13 @@ func PlanFile(path string) (*Result, error) {
 	}
 	result.Lowered = lowered
 
-	terraformJSON, err := infraplan.GenerateTerraformJSON(result.Lowered.Infra)
+	infraArtifact, err := infraplan.GenerateArtifact(result.Lowered.Infra)
 	if err != nil {
 		return nil, err
 	}
-	result.TerraformJSON = string(terraformJSON)
+	result.InfraArtifact = infraArtifact
+	if infraArtifact.Format == infraplan.ArtifactFormatTerraformJSON {
+		result.TerraformJSON = infraArtifact.Content
+	}
 	return result, nil
 }

@@ -27,6 +27,7 @@ func (c *planCommand) Run(args []string) error {
 	path := fs.String("path", "sai.sai", "Path to the .sai manifest")
 	jsonOutput := fs.Bool("json", false, "Emit JSON output")
 	terraformOutput := fs.Bool("terraform-json", false, "Emit only generated Terraform JSON")
+	infraOutput := fs.Bool("infra-artifact", false, "Emit the provider-native infrastructure artifact")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -43,7 +44,14 @@ func (c *planCommand) Run(args []string) error {
 	if *jsonOutput {
 		return printJSON(result)
 	}
+	if *infraOutput {
+		fmt.Println(result.InfraArtifact.Content)
+		return nil
+	}
 	if *terraformOutput {
+		if result.InfraArtifact == nil || result.InfraArtifact.Format != "terraform-json" {
+			return fmt.Errorf("terraform-json output is unavailable for cloud %q; use --infra-artifact instead", result.IR.Application.Cloud)
+		}
 		fmt.Println(result.TerraformJSON)
 		return nil
 	}

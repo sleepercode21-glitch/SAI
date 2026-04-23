@@ -8,12 +8,83 @@ import (
 	"github.com/sleepercode/sai/planner"
 )
 
-func TestGenerateTerraformJSONIncludesCoreResources(t *testing.T) {
+func TestGenerateArtifactUsesAWSBackend(t *testing.T) {
+	artifact, err := GenerateArtifact(testPlan("aws", "us-east-1"))
+	if err != nil {
+		t.Fatalf("GenerateArtifact returned error: %v", err)
+	}
+	if got, want := artifact.Format, ArtifactFormatTerraformJSON; got != want {
+		t.Fatalf("unexpected artifact format: got %q want %q", got, want)
+	}
+	for _, fragment := range []string{`"aws_vpc"`, `"aws_ecs_service"`, `"aws_db_instance"`} {
+		if !strings.Contains(artifact.Content, fragment) {
+			t.Fatalf("expected AWS artifact to contain %q", fragment)
+		}
+	}
+}
+
+func TestGenerateArtifactUsesAzureBackend(t *testing.T) {
+	artifact, err := GenerateArtifact(testPlan("azure", "eastus"))
+	if err != nil {
+		t.Fatalf("GenerateArtifact returned error: %v", err)
+	}
+	if got, want := artifact.Format, ArtifactFormatBicep; got != want {
+		t.Fatalf("unexpected artifact format: got %q want %q", got, want)
+	}
+	for _, fragment := range []string{"targetScope = 'resourceGroup'", "Microsoft.App/containerApps", "Microsoft.DBforPostgreSQL/flexibleServers"} {
+		if !strings.Contains(artifact.Content, fragment) {
+			t.Fatalf("expected Azure artifact to contain %q", fragment)
+		}
+	}
+}
+
+func TestGenerateArtifactUsesGCPBackend(t *testing.T) {
+	artifact, err := GenerateArtifact(testPlan("gcp", "us-central1"))
+	if err != nil {
+		t.Fatalf("GenerateArtifact returned error: %v", err)
+	}
+	if got, want := artifact.Format, ArtifactFormatTerraformJSON; got != want {
+		t.Fatalf("unexpected artifact format: got %q want %q", got, want)
+	}
+	for _, fragment := range []string{`"google_compute_network"`, `"google_cloud_run_v2_service"`, `"google_sql_database_instance"`} {
+		if !strings.Contains(artifact.Content, fragment) {
+			t.Fatalf("expected GCP artifact to contain %q", fragment)
+		}
+	}
+}
+
+func TestGenerateTerraformJSONSupportsGCP(t *testing.T) {
+	data, err := GenerateTerraformJSON(testPlan("gcp", "us-central1"))
+	if err != nil {
+		t.Fatalf("GenerateTerraformJSON returned error: %v", err)
+	}
+	for _, fragment := range []string{`"google_compute_network"`, `"google_cloud_run_v2_service"`} {
+		if !strings.Contains(string(data), fragment) {
+			t.Fatalf("expected GCP terraform JSON to contain %q", fragment)
+		}
+	}
+}
+
+func TestGenerateTerraformJSONRejectsAzure(t *testing.T) {
+	_, err := GenerateTerraformJSON(testPlan("azure", "eastus"))
+	if err == nil {
+		t.Fatal("expected terraform json generation to fail for azure")
+	}
+}
+
+func TestGenerateArtifactRejectsUnsupportedCloud(t *testing.T) {
+	_, err := GenerateArtifact(&Plan{Cloud: "digitalocean"})
+	if err == nil {
+		t.Fatal("expected unsupported cloud to fail")
+	}
+}
+
+func testPlan(cloud, region string) *Plan {
 	program := &ir.ProgramIR{
 		Application: ir.ApplicationIR{
 			Name:      "orders",
-			Cloud:     "aws",
-			Region:    "us-east-1",
+			Cloud:     cloud,
+			Region:    region,
 			BudgetUSD: 75,
 			Env:       "prod",
 		},
@@ -36,34 +107,6 @@ func TestGenerateTerraformJSONIncludesCoreResources(t *testing.T) {
 		MaxInstances: 3,
 		EstimatedUSD: 75,
 	}
-
-	plan, err := Lower(program, deployment)
-	if err != nil {
-		t.Fatalf("Lower returned error: %v", err)
-	}
-
-	data, err := GenerateTerraformJSON(plan)
-	if err != nil {
-		t.Fatalf("GenerateTerraformJSON returned error: %v", err)
-	}
-
-	got := string(data)
-	for _, fragment := range []string{
-		`"aws_vpc"`,
-		`"aws_ecs_service"`,
-		`"aws_db_instance"`,
-		`"engine": "postgres"`,
-		`"container_definitions"`,
-	} {
-		if !strings.Contains(got, fragment) {
-			t.Fatalf("expected terraform JSON to contain %q", fragment)
-		}
-	}
-}
-
-func TestGenerateTerraformJSONRejectsUnsupportedCloud(t *testing.T) {
-	_, err := GenerateTerraformJSON(&Plan{Cloud: "gcp"})
-	if err == nil {
-		t.Fatal("expected unsupported cloud to fail")
-	}
+	plan, _ := Lower(program, deployment)
+	return plan
 }

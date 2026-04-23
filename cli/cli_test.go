@@ -44,6 +44,121 @@ func TestInitValidateAndPlanCommands(t *testing.T) {
 	}
 }
 
+func TestPlanCommandEmitsAzureInfraArtifact(t *testing.T) {
+	tempDir := t.TempDir()
+	manifestPath := filepath.Join(tempDir, "azure.sai")
+	manifest := `app "orders" {
+  cloud azure
+  region "eastus"
+  users 5000
+  budget 75usd
+}
+
+service api {
+  port 3000
+  public http
+}
+`
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
+		t.Fatalf("os.WriteFile returned error: %v", err)
+	}
+
+	output, err := captureStdout(t, func() error {
+		return NewPlanCommand().Run([]string{"--path", manifestPath, "--infra-artifact"})
+	})
+	if err != nil {
+		t.Fatalf("plan command returned error: %v", err)
+	}
+	if !strings.Contains(output, "Microsoft.App/containerApps") {
+		t.Fatalf("expected Azure Bicep in output, got %q", output)
+	}
+}
+
+func TestPlanCommandRejectsTerraformJSONForAzure(t *testing.T) {
+	tempDir := t.TempDir()
+	manifestPath := filepath.Join(tempDir, "azure.sai")
+	manifest := `app "orders" {
+  cloud azure
+  region "eastus"
+  users 5000
+  budget 75usd
+}
+
+service api {
+  port 3000
+  public http
+}
+`
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
+		t.Fatalf("os.WriteFile returned error: %v", err)
+	}
+
+	err := NewPlanCommand().Run([]string{"--path", manifestPath, "--terraform-json"})
+	if err == nil {
+		t.Fatal("expected terraform-json flag to fail for azure")
+	}
+}
+
+func TestPlanCommandEmitsGCPInfraArtifact(t *testing.T) {
+	tempDir := t.TempDir()
+	manifestPath := filepath.Join(tempDir, "gcp.sai")
+	manifest := `app "orders" {
+  cloud gcp
+  region "us-central1"
+  users 5000
+  budget 75usd
+}
+
+service api {
+  port 3000
+  public http
+}
+`
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
+		t.Fatalf("os.WriteFile returned error: %v", err)
+	}
+
+	output, err := captureStdout(t, func() error {
+		return NewPlanCommand().Run([]string{"--path", manifestPath, "--infra-artifact"})
+	})
+	if err != nil {
+		t.Fatalf("plan command returned error: %v", err)
+	}
+	if !strings.Contains(output, `"google_cloud_run_v2_service"`) {
+		t.Fatalf("expected GCP artifact in output, got %q", output)
+	}
+}
+
+func TestPlanCommandEmitsGCPAsTerraformJSON(t *testing.T) {
+	tempDir := t.TempDir()
+	manifestPath := filepath.Join(tempDir, "gcp.sai")
+	manifest := `app "orders" {
+  cloud gcp
+  region "us-central1"
+  users 5000
+  budget 75usd
+}
+
+service api {
+  port 3000
+  public http
+}
+`
+	if err := os.WriteFile(manifestPath, []byte(manifest), 0o644); err != nil {
+		t.Fatalf("os.WriteFile returned error: %v", err)
+	}
+
+	output, err := captureStdout(t, func() error {
+		return NewPlanCommand().Run([]string{"--path", manifestPath, "--terraform-json"})
+	})
+	if err != nil {
+		t.Fatalf("plan command returned error: %v", err)
+	}
+	if !strings.Contains(output, `"google_compute_network"`) {
+		t.Fatalf("expected GCP terraform JSON in output, got %q", output)
+	}
+}
+
 func TestAppUnknownCommandFails(t *testing.T) {
 	err := NewApp().Run([]string{"unknown"})
 	if err == nil {

@@ -28,4 +28,10 @@ func TestPlanFileChoosesExpectedProfile(t *testing.T) {
 	if got, want := string(result.Plan.Profile), "balanced-web"; got != want {
 		t.Fatalf("unexpected profile: got %q want %q", got, want)
 	}
+	if result.InfraArtifact == nil {
+		t.Fatal("expected provider-native infra artifact to be present")
+	}
+	if got, want := string(result.InfraArtifact.Format), "terraform-json"; got != want {
+		t.Fatalf("unexpected infra artifact format: got %q want %q", got, want)
+	}
 }

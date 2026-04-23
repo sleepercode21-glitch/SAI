@@ -81,6 +81,9 @@ func normalizeApp(node *ast.AppDecl, diagnostics *utils.Diagnostics) Application
 	if result.BudgetUSD <= 0 {
 		diagnostics.Add("ir", "app.budget must be greater than zero", node.Span)
 	}
+	if !isSupportedCloud(result.Cloud) {
+		diagnostics.Add("ir", fmt.Sprintf("app.cloud must be one of aws, azure, or gcp; got %q", result.Cloud), node.Span)
+	}
 
 	return result
 }
@@ -196,4 +199,13 @@ func slugify(value string) string {
 	normalized = strings.ReplaceAll(normalized, " ", "-")
 	normalized = strings.ReplaceAll(normalized, "_", "-")
 	return normalized
+}
+
+func isSupportedCloud(value string) bool {
+	switch value {
+	case "aws", "azure", "gcp":
+		return true
+	default:
+		return false
+	}
 }

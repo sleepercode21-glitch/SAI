@@ -53,3 +53,22 @@ service api {
 		t.Fatal("expected Build to fail for an unknown resource reference")
 	}
 }
+
+func TestBuildRejectsUnsupportedCloud(t *testing.T) {
+	program, err := parser.Parse(`app "demo" {
+  cloud digitalocean
+  users 1000
+  budget 25usd
+}
+
+service api {
+  port 8080
+}`)
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+
+	if _, err := Build(program); err == nil {
+		t.Fatal("expected Build to fail for an unsupported cloud")
+	}
+}

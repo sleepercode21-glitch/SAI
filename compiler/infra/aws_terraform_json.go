@@ -3,36 +3,9 @@ package infra
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 )
 
-type terraformDocument struct {
-	Terraform terraformSettings         `json:"terraform"`
-	Locals    map[string]any            `json:"locals,omitempty"`
-	Resource  map[string]map[string]any `json:"resource"`
-	Output    map[string]outputValue    `json:"output"`
-}
-
-type terraformSettings struct {
-	RequiredVersion   string                         `json:"required_version"`
-	RequiredProviders map[string]providerRequirement `json:"required_providers"`
-}
-
-type providerRequirement struct {
-	Source  string `json:"source"`
-	Version string `json:"version"`
-}
-
-type outputValue struct {
-	Value any `json:"value"`
-}
-
-// GenerateTerraformJSON emits deterministic Terraform JSON from the infra plan.
-func GenerateTerraformJSON(plan *Plan) ([]byte, error) {
-	if plan.Cloud != "aws" {
-		return nil, fmt.Errorf("infra codegen currently supports only aws, got %q", plan.Cloud)
-	}
-
+func generateAWSTerraformJSON(plan *Plan) ([]byte, error) {
 	stack := slugify(fmt.Sprintf("%s-%s", plan.ApplicationName, plan.Environment))
 	resources := map[string]map[string]any{
 		"aws_vpc": {
@@ -62,7 +35,7 @@ func GenerateTerraformJSON(plan *Plan) ([]byte, error) {
 				"name":        stack + "-service",
 				"description": "Managed service security group",
 				"vpc_id":      "${aws_vpc.main.id}",
-				"ingress":     serviceIngress(plan),
+				"ingress":     awsServiceIngress(plan),
 				"egress": []map[string]any{
 					{
 						"from_port":   0,
@@ -107,7 +80,7 @@ func GenerateTerraformJSON(plan *Plan) ([]byte, error) {
 				"requires_compatibilities": []string{"FARGATE"},
 				"cpu":                      cpuForClass(plan.Compute.InfraClass),
 				"memory":                   memoryForClass(plan.Compute.InfraClass),
-				"container_definitions":    taskDefinitionJSON(plan, stack),
+				"container_definitions":    awsTaskDefinitionJSON(plan, stack),
 			},
 		},
 		"aws_ecs_service": {
@@ -164,134 +137,61 @@ func GenerateTerraformJSON(plan *Plan) ([]byte, error) {
 		Terraform: terraformSettings{
 			RequiredVersion: ">= 1.6.0",
 			RequiredProviders: map[string]providerRequirement{
-				"aws": {
-					Source:  "hashicorp/aws",
-					Version: "~> 5.0",
-				},
+				"aws": {Source: "hashicorp/aws", Version: "~> 5.0"},
 			},
 		},
-		Locals: map[string]any{
-			"stack_name": stack,
-		},
+		Locals:   map[string]any{"stack_name": stack},
 		Resource: resources,
 		Output: map[string]outputValue{
-			"cluster_name": {
-				Value: "${aws_ecs_cluster.main.name}",
-			},
-			"service_name": {
-				Value: "${aws_ecs_service.service.name}",
-			},
+			"cluster_name": {Value: "${aws_ecs_cluster.main.name}"},
+			"service_name": {Value: "${aws_ecs_service.service.name}"},
 		},
 	}
-
 	if plan.Database != nil && plan.Database.Managed {
-		document.Output["database_endpoint"] = outputValue{
-			Value: "${aws_db_instance.main.address}",
-		}
+		document.Output["database_endpoint"] = outputValue{Value: "${aws_db_instance.main.address}"}
 	}
-
 	return json.MarshalIndent(document, "", "  ")
 }
 
-func serviceIngress(plan *Plan) []map[string]any {
+func awsServiceIngress(plan *Plan) []map[string]any {
 	if !plan.Network.InternetIngress {
 		return []map[string]any{}
 	}
-	return []map[string]any{
-		{
-			"from_port":   plan.Network.ServicePort,
-			"to_port":     plan.Network.ServicePort,
-			"protocol":    "tcp",
-			"cidr_blocks": []string{"0.0.0.0/0"},
-		},
-	}
+	return []map[string]any{{
+		"from_port":   plan.Network.ServicePort,
+		"to_port":     plan.Network.ServicePort,
+		"protocol":    "tcp",
+		"cidr_blocks": []string{"0.0.0.0/0"},
+	}}
 }
 
-func taskDefinitionJSON(plan *Plan, stack string) string {
+func awsTaskDefinitionJSON(plan *Plan, stack string) string {
 	image := fmt.Sprintf("%s/%s:latest", slugify(plan.ApplicationName), plan.Compute.ServiceName)
-	definition := []map[string]any{
-		{
-			"name":      plan.Compute.ServiceName,
-			"image":     image,
-			"essential": true,
-			"portMappings": []map[string]any{
-				{
-					"containerPort": plan.Network.ServicePort,
-					"hostPort":      plan.Network.ServicePort,
-					"protocol":      "tcp",
-				},
-			},
-			"healthCheck": map[string]any{
-				"command": []string{
-					"CMD-SHELL",
-					fmt.Sprintf("curl -f http://localhost:%d%s || exit 1", plan.Network.ServicePort, plan.Compute.HealthCheckPath),
-				},
-				"interval":    30,
-				"timeout":     5,
-				"retries":     3,
-				"startPeriod": 10,
-			},
-			"logConfiguration": map[string]any{
-				"logDriver": "awslogs",
-				"options": map[string]any{
-					"awslogs-group":         "${aws_cloudwatch_log_group.service.name}",
-					"awslogs-region":        plan.Region,
-					"awslogs-stream-prefix": stack,
-				},
+	definition := []map[string]any{{
+		"name":      plan.Compute.ServiceName,
+		"image":     image,
+		"essential": true,
+		"portMappings": []map[string]any{{
+			"containerPort": plan.Network.ServicePort,
+			"hostPort":      plan.Network.ServicePort,
+			"protocol":      "tcp",
+		}},
+		"healthCheck": map[string]any{
+			"command":     []string{"CMD-SHELL", fmt.Sprintf("curl -f http://localhost:%d%s || exit 1", plan.Network.ServicePort, plan.Compute.HealthCheckPath)},
+			"interval":    30,
+			"timeout":     5,
+			"retries":     3,
+			"startPeriod": 10,
+		},
+		"logConfiguration": map[string]any{
+			"logDriver": "awslogs",
+			"options": map[string]any{
+				"awslogs-group":         "${aws_cloudwatch_log_group.service.name}",
+				"awslogs-region":        plan.Region,
+				"awslogs-stream-prefix": stack,
 			},
 		},
-	}
-
+	}}
 	data, _ := json.Marshal(definition)
 	return string(data)
-}
-
-func cpuForClass(class string) string {
-	switch class {
-	case "managed-medium":
-		return "1024"
-	default:
-		return "512"
-	}
-}
-
-func memoryForClass(class string) string {
-	switch class {
-	case "managed-medium":
-		return "2048"
-	default:
-		return "1024"
-	}
-}
-
-func dbInstanceClass(class string) string {
-	switch class {
-	case "medium":
-		return "db.t4g.medium"
-	default:
-		return "db.t4g.micro"
-	}
-}
-
-func dbStorageForClass(class string) int {
-	switch class {
-	case "medium":
-		return 50
-	default:
-		return 20
-	}
-}
-
-func maxPercent(maxInstances int) int {
-	if maxInstances > 1 {
-		return 200
-	}
-	return 100
-}
-
-func slugify(value string) string {
-	value = strings.ToLower(strings.TrimSpace(value))
-	value = strings.ReplaceAll(value, " ", "-")
-	value = strings.ReplaceAll(value, "_", "-")
-	return value
 }
