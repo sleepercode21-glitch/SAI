@@ -31,6 +31,12 @@ func TestPlanFileChoosesExpectedProfile(t *testing.T) {
 	if result.InfraArtifact == nil {
 		t.Fatal("expected provider-native infra artifact to be present")
 	}
+	if result.BuildArtifact == nil {
+		t.Fatal("expected build artifact to be present")
+	}
+	if result.DeployBundle == nil {
+		t.Fatal("expected deploy bundle to be present")
+	}
 	if got, want := string(result.InfraArtifact.Format), "terraform-json"; got != want {
 		t.Fatalf("unexpected infra artifact format: got %q want %q", got, want)
 	}

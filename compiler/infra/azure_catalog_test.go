@@ -1,0 +1,130 @@
+package infra
+
+import "testing"
+
+func TestAzureCatalogContainsRequestedServiceKinds(t *testing.T) {
+	expectedKinds := []string{
+		"virtual_machine",
+		"virtual_machine_scale_set",
+		"app_service",
+		"aks",
+		"container_instances",
+		"container_apps",
+		"functions",
+		"batch",
+		"service_fabric",
+		"cloud_services_extended_support",
+		"blob_storage",
+		"file_storage",
+		"queue_storage",
+		"table_storage",
+		"disk_storage",
+		"data_lake_storage_gen2",
+		"archive_storage",
+		"azure_sql_database",
+		"sql_managed_instance",
+		"sql_server_vm",
+		"cosmos_db",
+		"azure_database_postgresql",
+		"azure_database_mysql",
+		"azure_database_mariadb",
+		"azure_cache_redis",
+		"virtual_network",
+		"subnet",
+		"network_security_group",
+		"azure_firewall",
+		"load_balancer",
+		"application_gateway",
+		"front_door",
+		"traffic_manager",
+		"vpn_gateway",
+		"expressroute",
+		"private_endpoint",
+		"dns",
+		"ddos_protection",
+		"entra_id",
+		"rbac",
+		"managed_identities",
+		"key_vault",
+		"defender_for_cloud",
+		"sentinel",
+		"security_center",
+		"policy",
+		"blueprints",
+		"synapse_analytics",
+		"data_factory",
+		"databricks",
+		"hdinsight",
+		"stream_analytics",
+		"data_explorer",
+		"fabric",
+		"azure_openai",
+		"azure_machine_learning",
+		"cognitive_services",
+		"ai_studio",
+		"bot_service",
+		"azure_devops",
+		"github_integration",
+		"container_registry",
+		"app_configuration",
+		"api_management",
+		"devtest_labs",
+		"service_bus",
+		"event_grid",
+		"event_hubs",
+		"logic_apps",
+		"azure_monitor",
+		"log_analytics",
+		"application_insights",
+		"alerts",
+		"metrics",
+		"resource_manager",
+		"cost_management",
+		"advisor",
+		"azure_arc",
+		"azure_stack",
+		"iot_hub",
+		"iot_central",
+		"sphere",
+		"azure_virtual_desktop",
+		"windows_365",
+		"intune",
+	}
+
+	for _, kind := range expectedKinds {
+		if _, ok := lookupAzureService(kind); !ok {
+			t.Fatalf("expected azure service catalog to contain %q", kind)
+		}
+	}
+}
+
+func TestAzureCatalogContainsUsefulAliases(t *testing.T) {
+	aliases := []string{
+		"vms",
+		"vm",
+		"virtual_machines",
+		"virtual_machine_scale_sets",
+		"azure_kubernetes_service",
+		"functions_serverless",
+		"sql_database",
+		"azure_database_for_postgresql",
+		"azure_database_for_mysql",
+		"azure_database_for_mariadb",
+		"azure_cache_for_redis",
+		"vnet",
+		"nsg",
+		"application_gateway_waf",
+		"express_route",
+		"private_link",
+		"azure_active_directory",
+		"acr",
+		"apim",
+		"arm",
+	}
+
+	for _, kind := range aliases {
+		if _, ok := lookupAzureService(kind); !ok {
+			t.Fatalf("expected azure service catalog to contain alias %q", kind)
+		}
+	}
+}

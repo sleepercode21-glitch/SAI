@@ -47,6 +47,12 @@ func (p *Parser) parseProgram() (*ast.Program, error) {
 				return nil, err
 			}
 			program.Resources = append(program.Resources, resourceDecl)
+		case "resource":
+			resourceDecl, err := p.parseGenericResource()
+			if err != nil {
+				return nil, err
+			}
+			program.Resources = append(program.Resources, resourceDecl)
 		default:
 			return nil, p.errorf(fmt.Sprintf("unexpected top-level declaration %q", p.current.Literal), p.current.Span)
 		}
@@ -128,6 +134,45 @@ func (p *Parser) parseResource() (*ast.ResourceDecl, error) {
 	kind := p.current.Literal
 	start := p.current.Span.Start
 	if err := p.advance(); err != nil {
+		return nil, err
+	}
+	name, err := p.expectIdent()
+	if err != nil {
+		return nil, err
+	}
+	if err := p.expectType(tokenLBrace, "{"); err != nil {
+		return nil, err
+	}
+
+	fields := []ast.ResourceField{}
+	for p.current.Type != tokenRBrace {
+		field, err := p.parseResourceField()
+		if err != nil {
+			return nil, err
+		}
+		fields = append(fields, field)
+	}
+
+	end := p.current.Span.End
+	if err := p.expectType(tokenRBrace, "}"); err != nil {
+		return nil, err
+	}
+
+	return &ast.ResourceDecl{
+		Kind:   kind,
+		Name:   name,
+		Fields: fields,
+		Span:   ast.Span{Start: start, End: end},
+	}, nil
+}
+
+func (p *Parser) parseGenericResource() (*ast.ResourceDecl, error) {
+	start := p.current.Span.Start
+	if err := p.expectLiteral("resource"); err != nil {
+		return nil, err
+	}
+	kind, err := p.expectIdent()
+	if err != nil {
 		return nil, err
 	}
 	name, err := p.expectIdent()

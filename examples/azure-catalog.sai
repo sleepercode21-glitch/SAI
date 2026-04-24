@@ -1,0 +1,227 @@
+app "platform" {
+  cloud azure
+  region "eastus"
+  users 5000
+  budget 75usd
+}
+
+service api {
+  port 3000
+  public http
+  connects postgres, cache, jobs
+}
+
+database postgres {
+  type managed
+  size small
+}
+
+cache cache {
+  type managed
+  size small
+}
+
+queue jobs {
+  type managed
+  size small
+}
+
+resource azure_openai openai {
+  type managed
+  size small
+}
+
+resource key_vault vault {
+  type managed
+  size small
+}
+
+resource container_registry acr {
+  type managed
+  size small
+}
+
+resource application_gateway edge {
+  type managed
+  size medium
+}
+
+resource azure_monitor monitor {
+  type managed
+  size small
+}
+
+resource azure_machine_learning ml {
+  type managed
+  size small
+}
+
+resource event_hubs telemetry {
+  type managed
+  size small
+}
+
+resource data_factory pipelines {
+  type managed
+  size small
+}
+
+resource azure_firewall perimeter {
+  type managed
+  size medium
+}
+
+resource azure_virtual_desktop desktop {
+  type managed
+  size small
+}
+
+resource iot_hub devices {
+  type managed
+  size small
+}
+
+resource app_configuration config {
+  type managed
+  size small
+}
+
+resource api_management gateway {
+  type managed
+  size small
+}
+
+resource synapse_analytics warehouse {
+  type managed
+  size medium
+}
+
+resource databricks notebooks {
+  type managed
+  size medium
+}
+
+resource log_analytics logs {
+  type managed
+  size small
+}
+
+resource application_insights insights {
+  type managed
+  size small
+}
+
+resource policy guardrails {
+  type managed
+  size small
+}
+
+resource front_door edgeglobal {
+  type managed
+  size medium
+}
+
+resource traffic_manager traffic {
+  type managed
+  size small
+}
+
+resource azure_arc hybrid {
+  type managed
+  size small
+}
+
+resource windows_365 cloudpc {
+  type managed
+  size small
+}
+
+resource bot_service assistant {
+  type managed
+  size small
+}
+
+resource cosmos_db cosmos {
+  type managed
+  size medium
+}
+
+resource azure_sql_database sqldb {
+  type managed
+  size small
+}
+
+resource azure_database_mysql mysql {
+  type managed
+  size small
+}
+
+resource azure_database_mariadb mariadb {
+  type managed
+  size small
+}
+
+resource blob_storage blobs {
+  type managed
+  size small
+}
+
+resource data_lake_storage_gen2 lake {
+  type managed
+  size medium
+}
+
+resource file_storage fileshare {
+  type managed
+  size small
+}
+
+resource event_grid events {
+  type managed
+  size small
+}
+
+resource logic_apps workflows {
+  type managed
+  size small
+}
+
+resource defender_for_cloud defender {
+  type managed
+  size small
+}
+
+resource sentinel siem {
+  type managed
+  size small
+}
+
+resource managed_identities identities {
+  type managed
+  size small
+}
+
+resource private_endpoint privateapi {
+  type managed
+  size small
+}
+
+resource ddos_protection shield {
+  type managed
+  size small
+}
+
+resource azure_stack edgecluster {
+  type managed
+  size small
+}
+
+resource iot_central fleet {
+  type managed
+  size small
+}
+
+resource intune devicesmgmt {
+  type managed
+  size small
+}

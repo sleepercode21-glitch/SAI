@@ -43,10 +43,7 @@ func Lower(program *ir.ProgramIR, deployment *planner.Plan) (*Plan, error) {
 		if !connectsTo(program.Service.Connects, resource.Name) {
 			continue
 		}
-		env = append(env, EnvironmentVariable{
-			Name:   fmt.Sprintf("%s_URL", upperSnake(resource.Name)),
-			Source: fmt.Sprintf("secret:%s.connection_string", resource.Name),
-		})
+		env = append(env, environmentVariablesForResource(resource)...)
 	}
 
 	return &Plan{
@@ -65,6 +62,32 @@ func Lower(program *ir.ProgramIR, deployment *planner.Plan) (*Plan, error) {
 		},
 		Environment: env,
 	}, nil
+}
+
+func environmentVariablesForResource(resource ir.ResourceIR) []EnvironmentVariable {
+	prefix := upperSnake(resource.Name)
+	switch resource.Kind {
+	case "database":
+		return []EnvironmentVariable{{
+			Name:   fmt.Sprintf("%s_URL", prefix),
+			Source: fmt.Sprintf("secret:%s.connection_string", resource.Name),
+		}}
+	case "cache":
+		return []EnvironmentVariable{
+			{Name: fmt.Sprintf("%s_ENDPOINT", prefix), Source: fmt.Sprintf("secret:%s.endpoint", resource.Name)},
+			{Name: fmt.Sprintf("%s_PASSWORD", prefix), Source: fmt.Sprintf("secret:%s.password", resource.Name)},
+		}
+	case "queue":
+		return []EnvironmentVariable{
+			{Name: fmt.Sprintf("%s_NAMESPACE", prefix), Source: fmt.Sprintf("secret:%s.namespace", resource.Name)},
+			{Name: fmt.Sprintf("%s_NAME", prefix), Source: fmt.Sprintf("literal:%s", resource.Name)},
+		}
+	default:
+		return []EnvironmentVariable{{
+			Name:   fmt.Sprintf("%s_REF", prefix),
+			Source: fmt.Sprintf("secret:%s.reference", resource.Name),
+		}}
+	}
 }
 
 func connectsTo(resources []string, target string) bool {

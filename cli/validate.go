@@ -34,7 +34,7 @@ func (c *validateCommand) Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	result, err := compiler.CompileFile(manifestPath)
+	result, err := compiler.PlanFile(manifestPath)
 	if err != nil {
 		return err
 	}

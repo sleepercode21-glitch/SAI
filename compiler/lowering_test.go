@@ -26,4 +26,7 @@ func TestLowerBuildsIndependentPlans(t *testing.T) {
 	if got, want := result.Lowered.Incident.Responses[0].Action, "restart"; got != want {
 		t.Fatalf("unexpected incident action: got %q want %q", got, want)
 	}
+	if got, want := len(result.Lowered.Infra.Resources), 1; got != want {
+		t.Fatalf("unexpected lowered resource count: got %d want %d", got, want)
+	}
 }

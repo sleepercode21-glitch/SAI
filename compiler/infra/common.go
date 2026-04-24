@@ -4,6 +4,7 @@ import "strings"
 
 type terraformDocument struct {
 	Terraform terraformSettings         `json:"terraform"`
+	Variable  map[string]variableValue  `json:"variable,omitempty"`
 	Locals    map[string]any            `json:"locals,omitempty"`
 	Resource  map[string]map[string]any `json:"resource"`
 	Output    map[string]outputValue    `json:"output"`
@@ -21,6 +22,11 @@ type providerRequirement struct {
 
 type outputValue struct {
 	Value any `json:"value"`
+}
+
+type variableValue struct {
+	Type      string `json:"type,omitempty"`
+	Sensitive bool   `json:"sensitive,omitempty"`
 }
 
 func sourceRanges(external bool) []string {

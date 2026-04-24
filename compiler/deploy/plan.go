@@ -9,8 +9,13 @@ import (
 
 // Plan is the lowering target for deployment generation.
 type Plan struct {
+	Cloud             string   `json:"cloud"`
+	ApplicationName   string   `json:"application_name"`
 	Strategy          string   `json:"strategy"`
 	Environment       string   `json:"environment"`
+	Region            string   `json:"region"`
+	ServiceName       string   `json:"service_name"`
+	ContextDir        string   `json:"context_dir"`
 	SerializedKey     string   `json:"serialized_key"`
 	SupportsLocalCLI  bool     `json:"supports_local_cli"`
 	SupportsGitHub    bool     `json:"supports_github"`
@@ -23,8 +28,13 @@ type Plan struct {
 // Lower converts IR into a deploy-specific plan.
 func Lower(program *ir.ProgramIR, deployment *planner.Plan) (*Plan, error) {
 	return &Plan{
+		Cloud:             program.Application.Cloud,
+		ApplicationName:   program.Application.Name,
 		Strategy:          fmt.Sprintf("rolling-%s", deployment.Profile),
 		Environment:       program.Application.Env,
+		Region:            program.Application.Region,
+		ServiceName:       program.Service.Name,
+		ContextDir:        program.Service.Path,
 		SerializedKey:     fmt.Sprintf("%s/%s", program.Application.Slug, program.Application.Env),
 		SupportsLocalCLI:  true,
 		SupportsGitHub:    true,

@@ -46,3 +46,38 @@ service api {}`)
 		t.Fatal("expected parse to fail for duplicate app declarations")
 	}
 }
+
+func TestParseSupportsGenericResourceDeclarations(t *testing.T) {
+	program, err := Parse(`app "orders" {
+  cloud azure
+  users 5000
+  budget 75usd
+}
+
+service api {
+  public http
+}
+
+resource azure_openai openai {
+  type managed
+  size small
+}
+
+resource key_vault secrets {
+  type managed
+  size small
+}`)
+	if err != nil {
+		t.Fatalf("Parse returned error: %v", err)
+	}
+
+	if got, want := len(program.Resources), 2; got != want {
+		t.Fatalf("unexpected resource count: got %d want %d", got, want)
+	}
+	if got, want := program.Resources[0].Kind, "azure_openai"; got != want {
+		t.Fatalf("unexpected first resource kind: got %q want %q", got, want)
+	}
+	if got, want := program.Resources[1].Kind, "key_vault"; got != want {
+		t.Fatalf("unexpected second resource kind: got %q want %q", got, want)
+	}
+}
